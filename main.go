@@ -18,16 +18,15 @@ func generateRandomElements(size int) []int {
 	if size <= 0 {
 		return []int{}
 	}
-
-	// Инициализация генератора случайных чисел
-	rand.Seed(time.Now().UnixNano())
+	// Создаем новый генератор случайных чисел
+	r := rand.New(rand.NewSource(time.Now().UnixNano()))
 
 	// Создание слайса заданного размера
 	data := make([]int, size)
 
 	// Заполнение слайса случайными числами
 	for i := 0; i < size; i++ {
-		data[i] = rand.Int()
+		data[i] = r.Intn(size)
 	}
 
 	return data
@@ -50,30 +49,44 @@ func maximum(data []int) int {
 
 // maxChunks returns the maximum number of elements in a chunks.
 func maxChunks(data []int) int {
-	var wg sync.WaitGroup
-	sizeChunk := SIZE / CHUNKS           //размер одной части (среза)
-	maximumChunks := make([]int, CHUNKS) //слайс для максимумов частей
-	for i := 0; i < CHUNKS; i++ {
-		startIndex := i * sizeChunk        //начальный индекс среза
-		endIndex := startIndex + sizeChunk //конечный индекс среза
-		// Проверяем, чтобы endIndex не выходил за пределы длины data
-		if endIndex > len(data) {
-			endIndex = len(data)
-		}
-		wg.Add(1)
-
-		go func(i, start, end int) {
-			defer wg.Done()
-			maxChunk := maximum(data[start:end]) //максимум части(среза)
-			maximumChunks[i] = maxChunk
-		}(i, startIndex, endIndex) //добавляем найденный максимум части в слайс
+	n := len(data)
+	if n == 0 {
+		return 0
 	}
 
+	chunks := CHUNKS
+	if chunks > n {
+		chunks = n
+	}
+
+	baseChunkSize := n / chunks
+	remainder := n % chunks
+
+	maximumChunks := make([]int, chunks)
+	var wg sync.WaitGroup
+
+	startIndex := 0
+	for i := 0; i < chunks; i++ {
+		size := baseChunkSize
+		if remainder > 0 {
+			size++
+			remainder--
+		}
+
+		endIndex := startIndex + size
+
+		wg.Add(1)
+		go func(i int, chunk []int) {
+			defer wg.Done()
+
+			maximumChunks[i] = maximum(chunk)
+		}(i, data[startIndex:endIndex])
+		startIndex = endIndex
+	}
 	wg.Wait()
 
 	// Возвращаем максимальное значение из всех частей
-	maxOverall := maximum(maximumChunks)
-	return maxOverall
+	return maximum(maximumChunks)
 }
 
 func main() {
@@ -89,6 +102,7 @@ func main() {
 	fmt.Printf("Ищем максимальное значение в %d потоков\n", CHUNKS)
 	start = time.Now()
 	maxSeveralThreads := maxChunks(numberSequence)
+
 	elapsed = time.Since(start)
 	fmt.Printf("Максимальное значение элемента: %d\nВремя поиска: %d ms\n", maxSeveralThreads, elapsed.Milliseconds())
 }

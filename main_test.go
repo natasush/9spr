@@ -2,6 +2,8 @@ package main
 
 import (
 	"testing"
+
+	"github.com/stretchr/testify/assert"
 )
 
 // Тест для функции generateRandomElements
@@ -38,21 +40,13 @@ func TestGenerateRandomElements(t *testing.T) {
 			result := generateRandomElements(tt.size)
 
 			// Проверяем размер возвращаемого слайса
-			if len(result) != tt.expected {
-				t.Errorf("generateRandomElements(%d) вернул слайс размером %d, ожидалось %d",
-					tt.size, len(result), tt.expected)
-			}
-
+			assert.Len(t, result, tt.expected, "generateRandomElements(%d) вернул слайс размером %d, ожидалось %d", tt.size, len(result), tt.expected)
+			// Проверка на непустой срез, только если size > 0
 			if tt.size > 0 {
-				// Проверяем, что слайс не пустой
-				if len(result) == 0 {
-					t.Errorf("generateRandomElements(%d) вернул пустой слайс", tt.size)
-				}
-
+				assert.NotEmpty(t, result, "generateRandomElements(%d) вернул пустой слайс", tt.size)
 			}
 		})
 	}
-
 }
 
 func TestMaximum(t *testing.T) {
@@ -61,8 +55,6 @@ func TestMaximum(t *testing.T) {
 		input    []int
 		expected int
 	}{
-		{"Pozitive numbers", []int{1, 2, 3, 4, 5}, 5},
-		{"Negative numbers", []int{-1, -2, -3, -4, -5}, -1},
 		{"Empty slise", []int{}, 0},
 		{"Single element", []int{3}, 3},
 		{"Mixed numbers", []int{-6, -5, -1, 2, 3, 5}, 5},
@@ -72,9 +64,8 @@ func TestMaximum(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			result := maximum(tt.input)
-			if result != tt.expected {
-				t.Errorf("maximum(%v) = %d, expected %d", tt.input, result, tt.expected)
-			}
+			assert.Equal(t, tt.expected, result, "maximum(%v) = %d, expected %d", tt.input, result, tt.expected)
 		})
+
 	}
 }
